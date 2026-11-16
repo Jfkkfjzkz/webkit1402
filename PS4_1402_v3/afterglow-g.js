@@ -937,11 +937,12 @@ async function attempt(ctx, opts) {
     return false;
   }
   const preflightHen = await fetchBytes("hen1402_184.bin", "preflight");
-  if (!preflightHen || preflightHen.length !== 501152 || preflightHen[0] !== 0xE9) {
-    say("[preflight] Official HEN184 file missing, corrupted, or unexpected format; no kernel operations performed");
+  if (!preflightHen || !preflightHen.length || preflightHen[0] !== 0xE9) {
+    say("[preflight] Payload missing, empty, or not a raw payload; no kernel operations performed");
     return false;
   }
-  say("[preflight] HEN184 file served, size and format OK (hash was checked on PC startup)");
+  say("[preflight] payload served, " + preflightHen.length
+      + " bytes, format OK (hash was checked on PC startup)");
 
   const missing = seedStubs();
   if (missing.length) {
@@ -1459,10 +1460,6 @@ async function loadPayload(url, vorab) {
   }
 
   if (!blob.length) { say("[p] " + url + " is empty"); return false; }
-  if (url === "hen1402_184.bin" && blob.length !== 501152) {
-    say("[p] HEN184 wrong length " + blob.length + " (expected 501152), stopping");
-    return false;
-  }
   if (blob[0] !== 0xe9) {
     say("[p] " + url + " does not start with a jmp -- not a raw payload, refusing");
     return false;
@@ -1504,7 +1501,7 @@ async function loadPayload(url, vorab) {
   
   // This version does NOT rewrite the official HEN executable in memory.
   // 0x1068 / 0x1136 / 0x3490 are not safe, generic patch locations.
-  say("[p] Official HEN184 copied byte-for-byte; starting raw-payload thread");
+  say("[p] payload copied byte-for-byte; starting raw-payload thread");
 
   const SLOT_1352 = 0x3cb9c00;
   const slot = (c.off && c.off.wk___imp_pthread_create !== undefined)
